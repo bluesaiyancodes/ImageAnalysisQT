@@ -9,16 +9,22 @@ from extraCodes import *
 
 
 class imgDialogue(QDialog):
+    '''
+    This Class creates new windows for the selected boxes in the main image screen
+    '''
+
     def __init__(self, h, w, imgPath, parent=None):
         super(imgDialogue, self).__init__(parent)
         self.setGeometry(500,800,w,h)
         self.setWindowTitle("Aux Image Window")
         self.imagePath = imgPath
-        print("Aux Window:", self.imagePath)
+        #print("Aux Window:", self.imagePath)
 
+        # Set Layouts
         layoutV = QVBoxLayout()
         layoutH = QHBoxLayout()
 
+        # Set Image
         self.imgLabel = QLabel("Cannot Display Image", self)
         image = QImage()
         image.load(self.imagePath)
@@ -26,9 +32,11 @@ class imgDialogue(QDialog):
         self.imgLabel.setPixmap(self.pix)
         self.imgLabel.adjustSize()
 
+        # Declare Buttons
         self.btnLab = QPushButton("LAB", self)
         self.btnRgb = QPushButton("RGB", self)
 
+        # Configure Layout
         layoutH.addWidget(self.btnLab)
         layoutH.addWidget(self.btnRgb)
         
@@ -40,34 +48,57 @@ class imgDialogue(QDialog):
 
 
 class mainWindow(QDialog):
+    '''
+        This window displays the image on where the boxes will be drawn
+    '''
     def __init__(self, imagePath, parent=None):
         super(mainWindow, self).__init__(parent)
+        # Set Window Configuration
         self.setGeometry(500,500,900,900)
         self.setWindowTitle("Master Image Window")
         self.imagePath = imagePath
         self.pix = QPixmap(self.rect().size())
         self.pix.fill(Qt.white)
 
+        # Pointers for rectangle box drawing
         self.begin, self.destination = QPoint(), QPoint()
+        # To keep a list of of all the boxes
         self.rectList = []
 
 
+        # Resize image based on the window size
+        self.imagePath = resize_with_padding(self.imagePath, (900, 900))
+
+        # Adding a button and setting its action 
         self.layout = QGridLayout(self)
-        self.btnshow = QPushButton("Choose", self)
+        self.btnshow = QPushButton("Show", self)
         self.btnshow.clicked.connect(self.btnShowAction)
         self.layout.addWidget(self.btnshow, 1,0, Qt.AlignRight | Qt.AlignBottom)
+
+        # for multiple window management - counts the number of windows initialized
+        self.winArr = 0
 
 
 
     def paintEvent(self, event):
+        # Initialize Painter
         painter = QPainter(self)
+        # Set Pen color for box line color
         painter.setPen(QPen(QColor(255, 255, 255, 255), 1.0, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         #painter.setBrush(QBrush(QColor(255, 255, 255, 255)))  -- tO fILL
+        
+        # initialize image
         image = QImage()
+        # Load image
         image.load(self.imagePath)
-        self.pix = QPixmap.fromImage(image).scaled(900, 900, Qt.KeepAspectRatioByExpanding)
+        # self.pix = QPixmap.fromImage(image).scaled(900, 900, Qt.KeepAspectRatioByExpanding)
+        self.pix = QPixmap.fromImage(image)
+        # Set Image as window image
         painter.drawPixmap(self.rect(), self.pix)
+
+        # Begin Drawing of drawn Box
         if not self.begin.isNull() and not self.destination.isNull():
+            # Draw all the boxes present in the box list
             for rect in self.rectList:
                 #rect = QRect(self.begin, self.destination)
                 painter.drawRect(rect.normalized())
@@ -91,29 +122,49 @@ class mainWindow(QDialog):
         if event.button() & Qt.LeftButton:
             #print('Point 3')
             rect = QRect(self.begin, self.destination)
+            # append to the the box list of not present
             if rect not in self.rectList:
+
                 self.rectList.append(rect)
             
+            # Draw all the boxes present in the box list
             painter = QPainter(self.pix)
             painter.setPen(QPen(QColor(255, 255, 255, 255), 1.0, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
             for rect in self.rectList:
                 painter.drawRect(rect.normalized())
 
-            #painter.drawRect(rect.normalized())
+            # reset the coordinated used for drawing the boxes
             self.begin, self.destination = QPoint(), QPoint()
         #self.update()
 
+    def cleanRectList(self):
+        for i in range(len(self.rectList)):
+            if self.rectList[i].width()==1:
+                self.rectList.remove(self.rectList[i])
+                i-=1
+                
+
+
     def btnShowAction(self):
-        print("Choose Button clicked")
-        print(self.rectList[-2])
+        print("Show Button clicked")
+        self.cleanRectList()
+        print(self.rectList[-1])
         #x, y, w, h = 
-        x, y, w, h = self.rectList[-2].x(), self.rectList[-2].y(), self.rectList[-2].width(), self.rectList[-2].height()
+        x, y, w, h = self.rectList[-1].x(), self.rectList[-1].y(), self.rectList[-1].width(), self.rectList[-1].height()
         
         selImPath = cropImage(self.imagePath, x, y, h, w)
         print(selImPath)
-        self.auxDialog = imgDialogue(imgPath=selImPath, h=h, w=w)
+
+        # Creating Multiple Aux Windows (Upto 5)
         
-        self.auxDialog.show()
+        self.auxWins = {}
+        self.auxWins[self.winArr + 1] = imgDialogue(imgPath=selImPath, h=h, w=w)
+        self.auxWins[self.winArr + 1].show()
+        self.winArr += 1
+        print(self.auxWins)
+
+        for i in self.auxWins.values():
+            print(i)
 
 
 
