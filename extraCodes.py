@@ -80,3 +80,12 @@ def resize_with_padding(imagePath, expected_size):
     return savePath
 
 
+def genLAB(imagePath):
+    image = cv2.imread(imagePath)
+    image = image.astype("float32")
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    image = image.astype(np.uint8)
+
+    savePath = os.getcwd()+"/tmp/" + "lab_%s.png"%datetime.now().strftime('%H-%M-%S')
+    io.imsave(os.path.join(savePath), image)
+    return savePath

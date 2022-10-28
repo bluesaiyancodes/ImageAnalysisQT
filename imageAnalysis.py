@@ -36,6 +36,10 @@ class imgDialogue(QDialog):
         self.btnLab = QPushButton("LAB", self)
         self.btnRgb = QPushButton("RGB", self)
 
+        # Set Buttons
+        self.btnLab.clicked.connect(self.rgb2lab)
+        self.btnRgb.clicked.connect(self.lab2rgb)
+
         # Configure Layout
         layoutH.addWidget(self.btnLab)
         layoutH.addWidget(self.btnRgb)
@@ -44,6 +48,25 @@ class imgDialogue(QDialog):
         layoutV.addLayout(layoutH)
         
         self.setLayout(layoutV)
+
+    def rgb2lab(self):
+        
+        image = cv2.imread(self.imagePath)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        h, w, ch = image.shape
+        bytes_per_line = ch * w
+        newImage = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+
+
+        #image = QImage(image.data, image.shape[1], image.shape[0], QImage.Format_RGB888).rgbSwapped()
+        self.pix = QPixmap.fromImage(newImage)
+        self.imgLabel.setPixmap(self.pix)
+
+    def lab2rgb(self):
+        image = QImage()
+        image.load(self.imagePath)
+        self.pix = QPixmap.fromImage(image)
+        self.imgLabel.setPixmap(self.pix)
 
 
 
@@ -147,24 +170,24 @@ class mainWindow(QDialog):
 
     def btnShowAction(self):
         print("Show Button clicked")
-        self.cleanRectList()
-        print(self.rectList[-1])
-        #x, y, w, h = 
-        x, y, w, h = self.rectList[-1].x(), self.rectList[-1].y(), self.rectList[-1].width(), self.rectList[-1].height()
+        #self.cleanRectList() TODO Automactically remove points from the rect List
+        print(self.rectList[-2])
+        # Get box details
+        x, y, w, h = self.rectList[-2].x(), self.rectList[-2].y(), self.rectList[-2].width(), self.rectList[-2].height()
         
+        # Crop imaged based on rect dimentions
         selImPath = cropImage(self.imagePath, x, y, h, w)
-        print(selImPath)
+        #print(selImPath)
 
-        # Creating Multiple Aux Windows (Upto 5)
-        
+        # Creating Multiple Aux Windows
         self.auxWins = {}
         self.auxWins[self.winArr + 1] = imgDialogue(imgPath=selImPath, h=h, w=w)
         self.auxWins[self.winArr + 1].show()
         self.winArr += 1
-        print(self.auxWins)
-
+        #print(self.auxWins)
+        # Show all the windows 
         for i in self.auxWins.values():
-            print(i)
+            i.show()
 
 
 
