@@ -23,6 +23,8 @@ class imgDialogue(QDialog):
         # Set Layouts
         layoutV = QVBoxLayout()
         layoutH = QHBoxLayout()
+        layoutH2 = QHBoxLayout()
+        layoutH3 = QHBoxLayout()
 
         # Set Image
         self.imgLabel = QLabel("Cannot Display Image", self)
@@ -35,17 +37,34 @@ class imgDialogue(QDialog):
         # Declare Buttons
         self.btnLab = QPushButton("LAB", self)
         self.btnRgb = QPushButton("RGB", self)
+        self.btnL = QPushButton("L", self)
+        self.btnA = QPushButton("A", self)
+        self.btnB = QPushButton("B", self)
+        self.btnPD = QPushButton("Pixel Distribution", self)
+
 
         # Set Buttons
         self.btnLab.clicked.connect(self.rgb2lab)
         self.btnRgb.clicked.connect(self.lab2rgb)
+        self.btnL.clicked.connect(self.plotL)
+        self.btnA.clicked.connect(self.plotA)
+        self.btnB.clicked.connect(self.plotB)
+        self.btnPD.clicked.connect(self.plotPixelD)
 
         # Configure Layout
         layoutH.addWidget(self.btnLab)
         layoutH.addWidget(self.btnRgb)
+
+        layoutH2.addWidget(self.btnL)
+        layoutH2.addWidget(self.btnA)
+        layoutH2.addWidget(self.btnB)
+        
+        layoutH3.addWidget(self.btnPD)
         
         layoutV.addWidget(self.imgLabel)
         layoutV.addLayout(layoutH)
+        layoutV.addLayout(layoutH2)
+        layoutV.addLayout(layoutH3)
         
         self.setLayout(layoutV)
 
@@ -56,6 +75,7 @@ class imgDialogue(QDialog):
         h, w, ch = image.shape
         bytes_per_line = ch * w
         newImage = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        self.imgLabel.adjustSize()
 
 
         #image = QImage(image.data, image.shape[1], image.shape[0], QImage.Format_RGB888).rgbSwapped()
@@ -65,8 +85,41 @@ class imgDialogue(QDialog):
     def lab2rgb(self):
         image = QImage()
         image.load(self.imagePath)
+        self.pix = QPixmap.fromImage(image) 
+        self.imgLabel.setPixmap(self.pix)
+        self.imgLabel.adjustSize()
+
+    def plotL(self):
+        lPath = genL(self.imagePath)
+        image = QImage()
+        image.load(lPath)
         self.pix = QPixmap.fromImage(image)
         self.imgLabel.setPixmap(self.pix)
+        self.imgLabel.adjustSize()
+
+    def plotA(self):
+        lPath = genA(self.imagePath)
+        image = QImage()
+        image.load(lPath)
+        self.pix = QPixmap.fromImage(image)
+        self.imgLabel.setPixmap(self.pix)
+        self.imgLabel.adjustSize()
+
+    def plotB(self):
+        lPath = genB(self.imagePath)
+        image = QImage()
+        image.load(lPath)
+        self.pix = QPixmap.fromImage(image)
+        self.imgLabel.setPixmap(self.pix)    
+        self.imgLabel.adjustSize()
+
+    def plotPixelD(self):
+        lPath = pixelDist(self.imagePath)
+        image = QImage()
+        image.load(lPath)
+        self.pix = QPixmap.fromImage(image)
+        self.imgLabel.setPixmap(self.pix)    
+        self.imgLabel.adjustSize()
 
 
 
@@ -91,6 +144,7 @@ class mainWindow(QDialog):
 
         # Resize image based on the window size
         self.imagePath = resize_with_padding(self.imagePath, (900, 900))
+        
 
         # Adding a button and setting its action 
         self.layout = QGridLayout(self)
@@ -100,6 +154,7 @@ class mainWindow(QDialog):
 
         # for multiple window management - counts the number of windows initialized
         self.winArr = 0
+        self.auxWins = {}
 
 
 
@@ -180,14 +235,16 @@ class mainWindow(QDialog):
         #print(selImPath)
 
         # Creating Multiple Aux Windows
-        self.auxWins = {}
         self.auxWins[self.winArr + 1] = imgDialogue(imgPath=selImPath, h=h, w=w)
         self.auxWins[self.winArr + 1].show()
         self.winArr += 1
         #print(self.auxWins)
         # Show all the windows 
+        print("winArr: ", self.winArr)
+        print("len window: ", len(self.auxWins))
         for i in self.auxWins.values():
-            i.show()
+            print("printing window vals:", i)
+            #i.show()
 
 
 
